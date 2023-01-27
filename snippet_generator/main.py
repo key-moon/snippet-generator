@@ -37,6 +37,22 @@ SNIPPET_TARGETS: Mapping[str, Tuple[Type[SnippetTargetBase], Mapping[str, Any]]]
   })
 }
 
+def _merge_config(default, config):
+  if isinstance(default, dict) and isinstance(config, dict):
+    keys = set([*default.keys(), *config.keys()])
+    res = {}
+    for key in keys:
+      if key in default and key in config:
+        res[key] = _merge_config(default[key], config[key])
+        continue
+      if key in default:
+        res[key] = default[key]
+      else:
+        res[key] = config[key]
+    return res
+  else:
+    return config
+
 def main():
   parser = ArgumentParser()
   parser.add_argument("directory")
@@ -61,7 +77,7 @@ def main():
 
   loader_name = "default"
   loader_class, default_config = LOADERS[loader_name]
-  loader = loader_class({**default_config, **loader_config})
+  loader = loader_class(_merge_config(default_config, loader_config))
 
   snippets = {}
   for file in srcdir.rglob("*"):
@@ -86,5 +102,5 @@ def main():
   
   for target_name in targets_config:
     target_class, default_config = SNIPPET_TARGETS[target_name]
-    target = target_class({**default_config, **targets_config.get(target_name, {})})
+    target = target_class(_merge_config(default_config, targets_config.get(target_name, {})))
     target.dumps(snippets, res.destination)
