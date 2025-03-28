@@ -53,7 +53,6 @@ class VariableState(LoaderState):
     match = re.match(rf"^.*?([a-zA-Z0-9_-]+){self.config['variables-separator']}(.*)$", line)
     if match is not None:
       key, value = match.groups()
-      key = key.lower()
       self.snippet.variables[key] = value      
       return self
     if any(key in line for key in _as_list(self.config["body-signature"])):
